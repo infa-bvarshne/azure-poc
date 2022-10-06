@@ -1,0 +1,29 @@
+plugins {
+	id 'org.springframework.boot' version '2.6.12'
+	id 'io.spring.dependency-management' version '1.0.14.RELEASE'
+	id 'java'
+	id 'war'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation group: 'com.azure', name: 'azure-core', version: '1.32.0'
+
+
+	// https://mvnrepository.com/artifact/com.azure/azure-storage-blob
+	implementation group: 'com.azure', name: 'azure-storage-blob', version: '12.19.0'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
