@@ -21,7 +21,14 @@ dependencies {
 
 
 	// https://mvnrepository.com/artifact/com.azure/azure-storage-blob
-	implementation group: 'com.azure', name: 'azure-storage-blob', version: '12.19.0'
+	implementation group: 'com.azure', name: 'azure-storage-blob', version: '12.19.1'
+
+	// https://mvnrepository.com/artifact/com.azure/azure-identity
+	testImplementation group: 'com.azure', name: 'azure-identity', version: '1.6.0'
+
+	// https://mvnrepository.com/artifact/com.microsoft.azure/azure-storage
+	implementation group: 'com.microsoft.azure', name: 'azure-storage', version: '8.6.6'
+
 }
 
 tasks.named('test') {

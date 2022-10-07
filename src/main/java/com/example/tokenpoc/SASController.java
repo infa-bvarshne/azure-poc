@@ -7,20 +7,70 @@ import com.azure.storage.common.sas.AccountSasPermission;
 import com.azure.storage.common.sas.AccountSasResourceType;
 import com.azure.storage.common.sas.AccountSasService;
 import com.azure.storage.common.sas.AccountSasSignatureValues;
+import com.microsoft.azure.storage.CloudStorageAccount;
+import com.microsoft.azure.storage.SharedAccessAccountPolicy;
+import com.microsoft.azure.storage.StorageException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+//import com.azure.identity.DefaultAzureCredentialBuilder;
 
+
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
 @RestController
 public class SASController {
-    private final String SASTOKEN="?sv=2021-06-08&ss=bfqt&srt=sc&sp=rwdlacupiytfx&se=2022-09-30T19:15:09Z&st=2022-09-30T11:15:09Z&spr=https&sig=C67OXNjL2gquwUh3q7h%2Barn1hDUwbHp9BX63s3E%2Bdb4%3D";
-    private final String STORAGE_ACCOUNT_URL = "https://saspossa1.blob.core.windows.net";
+    private String accountName = "saspossa1";
+    private String endpointSuffix = "core.windows.net";
     //private final String CONTAINER_NAME = ""
-    @GetMapping("/generateSASToken")
-    public String generateSASToken(){
-        // Reference -https://stackoverflow.com/questions/53653473/generating-an-sas-token-in-java-to-download-a-file-in-an-azure-data-storage-cont
+
+//    private String generateUserDelegationKey() {
+//        /* Reference
+//        https://stackoverflow.com/questions/64242397/azure-sdk-for-java-how-to-setup-user-delegation-key-and-shared-authentication-si
+//
+//         */
+//        BlobServiceClient blobStorageClient = new BlobServiceClientBuilder()
+//                .endpoint("<your-storage-account-url>")
+//                .credential(new DefaultAzureCredentialBuilder().build())
+//                .buildClient();
+//    }
+
+    private String generateStorageAccountKey() throws URISyntaxException, InvalidKeyException, StorageException {
+
+       return "";
+    }
+
+    private String getAccountName(){
+        return accountName;
+    }
+
+    private String getEndpointSuffix(){
+        return endpointSuffix;
+    }
+
+    private String getAccountKey(){
+        return "e6NYXGu69nW0iQ3JtWpkdOwWPzwyoacXOH+3wHZyTT2c0E7p9suw16mT7m5/pKI3Mum7llS+ueJX+AStTOxnlQ==";
+    }
+
+    /*
+    Below method generates account level sas
+    You can use "az storage container generate-sas" to create service SAS and "az storage account generate-sas" to create account SAS, Account SAS looks like "se=2020-06-01&sp=r&sv=2018-03-28&ss=b", service SAS doesn't have "ss=b"
+    Refer - https://stackoverflow.com/questions/41697925/what-is-difference-between-account-vs-service-sas-in-azure
+     */
+    public String getSasTokenUsingSharedAccessPolicy() throws InvalidKeyException, StorageException, URISyntaxException {
+         /*
+        Reference:
+        1. https://stackoverflow.com/questions/53653473/generating-an-sas-token-in-java-to-download-a-file-in-an-azure-data-storage-cont
+         */
+        String accountName = getAccountName();
+        String accountKey = getAccountKey();
+        String endpointSuffix = getEndpointSuffix();
+        String storageConnectionString = String.format("DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s;EndpointSuffix=%s",
+                accountName, accountKey, endpointSuffix);
+        CloudStorageAccount storageAccount = CloudStorageAccount.parse(storageConnectionString);
+
         SharedAccessAccountPolicy sharedAccessAccountPolicy = new SharedAccessAccountPolicy();
         sharedAccessAccountPolicy.setPermissionsFromString("racwdlup");
         long date = new Date().getTime();
@@ -30,71 +80,16 @@ public class SASController {
         sharedAccessAccountPolicy.setResourceTypeFromString("sco");
         sharedAccessAccountPolicy.setServiceFromString("bfqt");
         String sasToken = "?" + storageAccount.generateSharedAccessSignature(sharedAccessAccountPolicy);
-    }
-
-    @GetMapping("/")
-    public String index() {
-        /*
-         * Generate an account sas. Other samples in this file will demonstrate how to create a client with the sas
-         * token.
-         */
-        // Object creation
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(STORAGE_ACCOUNT_URL)
-                .sasToken(SASTOKEN)
-                .buildClient();
-        //BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient("mycontainer");
-
-
-// Configure the sas parameters. This is the minimal set.
-        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(1);
-        AccountSasPermission accountSasPermission = new AccountSasPermission().setReadPermission(true);
-        AccountSasService services = new AccountSasService().setBlobAccess(true);
-        AccountSasResourceType resourceTypes = new AccountSasResourceType().setObject(true);
-
-// Generate the account sas.
-        AccountSasSignatureValues accountSasValues =
-                new AccountSasSignatureValues(expiryTime, accountSasPermission, services, resourceTypes);
-        System.out.println(accountSasValues);
-        String sasToken = blobServiceClient.generateAccountSas(accountSasValues);
         return sasToken;
-
-//// Generate a sas using a container client
-//        BlobContainerSasPermission containerSasPermission = new BlobContainerSasPermission().setCreatePermission(true);
-//        BlobServiceSasSignatureValues serviceSasValues =
-//                new BlobServiceSasSignatureValues(expiryTime, containerSasPermission);
-//        blobContainerClient.generateSas(serviceSasValues);
-//
-//// Generate a sas using a blob client
-//        BlobSasPermission blobSasPermission = new BlobSasPermission().setReadPermission(true);
-//        serviceSasValues = new BlobServiceSasSignatureValues(expiryTime, blobSasPermission);
-//        blobClient.generateSas(serviceSasValues);
     }
 
-//    @GetMapping("/getAzureToken")
-//    public void getToken(){
-//        String endpoint = String.format(Locale.ROOT, "https://%s.blob.core.windows.net", "accountName");
-//
-//// Create a BlobServiceClient object which will be used to create a container client
-//        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder().endpoint(endpoint)
-//                .credential(new DefaultAzureCredentialBuilder().build()).buildClient();
-//
-//// Get a user delegation key for the Blob service that's valid for seven days.
-//// You can use the key to generate any number of shared access signatures over the lifetime of the key.
-//        OffsetDateTime keyStart = OffsetDateTime.now();
-//        OffsetDateTime keyExpiry = OffsetDateTime.now().plusDays(7);
-//        UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(keyStart, keyExpiry);
-//
-//        BlobContainerSasPermission blobContainerSas = new BlobContainerSasPermission();
-//        blobContainerSas.setReadPermission(true);
-//        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(keyExpiry,
-//                blobContainerSas);
-//        BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient("containerName");
-//        if (!blobContainerClient.exists())
-//            blobContainerClient.create();
-//
-//        String sas = blobContainerClient
-//                .generateUserDelegationSas(blobServiceSasSignatureValues, userDelegationKey);
-//    }
-//    }
+    @GetMapping("/generateSASToken")
+    public String getSasToken(){
+        try{
+            return getSasTokenUsingSharedAccessPolicy();
+        }catch (Exception e) {
+            System.out.println(e);
+        }
+        return "";
+    }
 }
