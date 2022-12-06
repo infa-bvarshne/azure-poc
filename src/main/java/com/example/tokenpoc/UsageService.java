@@ -35,7 +35,7 @@ public class UsageService {
     }
 
     public void uploadBlobUsingDelegationToken(String tenantId, String clientId, String clientSecret, String accountName, String containerName) throws IOException {
-        String token = controller.getUserDelegationSas2(tenantId, clientId, clientSecret, accountName, containerName);
+        String token = controller.getUserDelegationSas3(tenantId, clientId, clientSecret, accountName, containerName);
         blobServiceClient = new BlobServiceClientBuilder()
                 .endpoint(STORAGE_ACCOUNT_URL)
                 .sasToken(token)
@@ -70,7 +70,7 @@ public class UsageService {
     }
 
     public void downloadBlobContentFromDelegation(String tenantId, String clientId, String clientSecret, String accountName, String containerName) throws IOException {
-        String token = controller.getUserDelegationSas2(tenantId, clientId, clientSecret, accountName, containerName);
+        String token = controller.getUserDelegationSas3(tenantId, clientId, clientSecret, accountName, containerName);
         blobServiceClient = new BlobServiceClientBuilder()
                 .endpoint(STORAGE_ACCOUNT_URL)
                 .sasToken(token)

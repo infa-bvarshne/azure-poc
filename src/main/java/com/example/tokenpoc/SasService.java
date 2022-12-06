@@ -11,6 +11,7 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import com.azure.storage.common.sas.CommonSasQueryParameters;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.SharedAccessAccountPolicy;
 import com.microsoft.azure.storage.StorageException;
@@ -25,6 +26,7 @@ import java.util.Locale;
 
 @Service
 public class SasService {
+    // Example 1 to generate user delegation SAS key
     public String getUserDelegationSas2(String tenantId, String clientId, String clientSecret, String accountName, String containerName) throws IOException {
         String authorityUrl = AzureAuthorityHosts.AZURE_PUBLIC_CLOUD +  tenantId;
 
@@ -43,6 +45,10 @@ public class SasService {
 
         // Upload a file
         BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
+        // sr=snapchot: BlobClient blobClient = blobContainerClient.getBlobClient("blob1.png", "test");
+        // sr=version: BlobClient blobClient = blobContainerClient.getBlobVersionClient("blob1.png", "2342");
+        // sr=container: BlobClient blobClient = blobContainerClient.getBlobClient("null");
+        // sr=blob: BlobClient blobClient = blobContainerClient.getBlobClient("blob1.png");
         BlobClient blobClient = blobContainerClient.getBlobClient(null);
         //BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(new File("/Users/bvarshne/Desktop/blob3.png")));
         //blobClient.upload(bufferedInputStream, bufferedInputStream.available(),true);
@@ -67,11 +73,12 @@ public class SasService {
         blobContainerSas.setMovePermission(true);
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(keyExpiry,
                 blobContainerSas);
-
         String sas = "?"+blobClient.generateUserDelegationSas(blobServiceSasSignatureValues, userDelegationKey);
+        System.out.println(sas);
         return sas;
     }
 
+    // Example 2 to generate user delegation sas key
     public String getUserDelegationSas(String accountName, String containerName) {
         /*
         Reference: https://stackoverflow.com/questions/64242397/azure-sdk-for-java-how-to-setup-user-delegation-key-and-shared-authentication-si
@@ -90,6 +97,52 @@ public class SasService {
 
         BlobContainerSasPermission blobContainerSas = new BlobContainerSasPermission();
         blobContainerSas.setReadPermission(true);
+        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(keyExpiry,
+                blobContainerSas);
+        BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
+        if (!blobContainerClient.exists())
+            blobContainerClient.create();
+
+        String sas = blobContainerClient.generateUserDelegationSas(blobServiceSasSignatureValues, userDelegationKey);
+        return sas;
+    }
+
+    // Example 3 to generate user delegation sas key
+    public String getUserDelegationSas3(String tenantId, String clientId, String clientSecret, String accountName, String containerName) {
+        String endpoint = String.format(Locale.ROOT, "https://%s.blob.core.windows.net", accountName);
+        String authorityUrl = AzureAuthorityHosts.AZURE_PUBLIC_CLOUD +  tenantId;
+
+// Create a BlobServiceClient object which will be used to create a container client
+        ClientSecretCredential credential = new ClientSecretCredentialBuilder()
+                .authorityHost(authorityUrl)
+                .tenantId(tenantId)
+                .clientSecret(clientSecret)
+                .clientId(clientId)
+                .build();
+
+
+        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                .credential(credential)
+                .endpoint("https://"+accountName+".blob.core.windows.net")
+                .buildClient();
+
+// Get a user delegation key for the Blob service that's valid for seven days.
+// You can use the key to generate any number of shared access signatures over the lifetime of the key.
+        OffsetDateTime keyStart = OffsetDateTime.now();
+        OffsetDateTime keyExpiry = OffsetDateTime.now().plusDays(7);
+        UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(keyStart, keyExpiry);
+
+        BlobContainerSasPermission blobContainerSas = new BlobContainerSasPermission();
+        blobContainerSas.setReadPermission(true);
+        blobContainerSas.setCreatePermission(true);
+        blobContainerSas.setAddPermission(true);
+        blobContainerSas.setWritePermission(true);
+        blobContainerSas.setExecutePermission(true);
+        blobContainerSas.setListPermission(true);
+        blobContainerSas.setDeletePermission(true);
+        blobContainerSas.setImmutabilityPolicyPermission(true);
+        blobContainerSas.setTagsPermission(true);
+        blobContainerSas.setMovePermission(true);
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(keyExpiry,
                 blobContainerSas);
         BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);

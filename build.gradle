@@ -21,7 +21,7 @@ dependencies {
 
 
 	// https://mvnrepository.com/artifact/com.azure/azure-storage-blob
-	implementation group: 'com.azure', name: 'azure-storage-blob', version: '12.19.1'
+	implementation group: 'com.azure', name: 'azure-storage-blob', version: '12.20.0'
 
 	// https://mvnrepository.com/artifact/com.azure/azure-identity
 	implementation group: 'com.azure', name: 'azure-identity', version: '1.6.0'
